@@ -137,7 +137,7 @@ String urlEncode(String str) {
   return encoded;
 }
 
-void http_send(String speech) {
+int http_send(String speech) {
     Serial.print("[HTTP] begin...\n");
     String queryParams = "?tts=" + urlEncode(speech) ;
     //String url =  "https://httpbin.org/get" ;
@@ -166,8 +166,10 @@ void http_send(String speech) {
   http.end();
 
   delay(500);
+  return httpCode ;
 }
 void loop() {
+
     if (M5.Btn.isPressed()) {
         data_offset = 0;
         Speakflag   = false;
@@ -182,18 +184,27 @@ void loop() {
             // delay(60);
         }
         Serial.println("end");
-
+        int status = 0 ;
         if (rest.Pcm2String(microphonedata0, data_offset, DEV_PID_ENGLISH,
                             &SpeakStr) != -1) {
             Serial.println(SpeakStr);
-            http_send(SpeakStr) ;
+            status = http_send(SpeakStr) ;
             Speakflag = true;
             M5.dis.drawpix(0, CRGB(128, 0, 128));
         } else {
             M5.dis.drawpix(0, CRGB(0, 128, 0));
         }
         InitI2SSpeakOrMic(MODE_SPK);
-        playBeep(440, 500);
+        switch(status) {
+          case 200:
+            playBeep(440, 500);
+            break ;
+          default:
+            playBeep(400, 200);
+            delay(200);
+            playBeep(300, 400);
+            break ;
+        }
 
     }
 
