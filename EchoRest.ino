@@ -16,6 +16,8 @@
 #include "M5Atom.h"
 #include "Secrets.h"
 
+extern size_t playBeep(int __freq = 2000, int __timems = 200, int __maxval = 10000);
+
 const char *WifiSSID = SECRET_WIFI_SSID;
 const char *WifiPWD  = SECRET_WIFI_PWD;
 
@@ -35,7 +37,7 @@ bool InitI2SSpeakOrMic(int mode) {
     i2s_driver_uninstall(SPEAK_I2S_NUMBER);
     i2s_config_t i2s_config = {
         .mode        = (i2s_mode_t)(I2S_MODE_MASTER),
-        .sample_rate = 16000,
+        .sample_rate = (mode == MODE_MIC ? 16000 : 88200),
         .bits_per_sample =
             I2S_BITS_PER_SAMPLE_16BIT,  // is fixed at 12bit, stereo, MSB
         .channel_format = I2S_CHANNEL_FMT_ALL_RIGHT,
@@ -74,7 +76,7 @@ bool InitI2SSpeakOrMic(int mode) {
     Serial.println("Init i2s_set_pin");
     err += i2s_set_pin(SPEAK_I2S_NUMBER, &tx_pin_config);
     Serial.println("Init i2s_set_clk");
-    err += i2s_set_clk(SPEAK_I2S_NUMBER, 16000, I2S_BITS_PER_SAMPLE_16BIT,
+    err += i2s_set_clk(SPEAK_I2S_NUMBER, (mode == MODE_MIC ? 16000 : 88200), I2S_BITS_PER_SAMPLE_16BIT,
                        I2S_CHANNEL_MONO);
 
     return true;
@@ -190,6 +192,9 @@ void loop() {
         } else {
             M5.dis.drawpix(0, CRGB(0, 128, 0));
         }
+        InitI2SSpeakOrMic(MODE_SPK);
+        playBeep(440, 500);
+
     }
 
     if (WiFi.status() != WL_CONNECTED) {
